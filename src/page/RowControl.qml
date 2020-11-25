@@ -24,6 +24,27 @@ Container {
 
     alwaysShowBackground: true
 
+    function updateMinimumHeight() {
+        if (rowData.isTitle) {
+            minimumContentHeight = heading.height
+            minimumHeight = implicitHeight
+            return
+        }
+
+        let minHeight = 0;
+        let minContentHeight = 0;
+        for (let i = 0; i < repeater.count; ++i) {
+            let item = repeater.itemAt(i)
+            if (item) {
+                minContentHeight = Math.max(minContentHeight, item.minimumContentHeight)
+                minHeight = Math.max(minHeight, item.minimumHeight)
+            }
+        }
+
+        minimumContentHeight = minContentHeight
+        minimumHeight = minHeight
+    }
+
     contentItem: Row {
         anchors.fill: parent
         anchors.topMargin: control.topPadding
@@ -56,9 +77,15 @@ Container {
             id: repeater
             model: PageDataModel { data: control.rowData }
 
+            onItemAdded: Qt.callLater(control.updateMinimumHeight)
+            onItemRemoved: Qt.callLater(control.updateMinimumHeight)
+
             ColumnControl {
                 height: parent.height
                 width: (parent.width - parent.spacing * (repeater.count - 1)) / repeater.count
+
+                onMinimumContentHeightChanged: Qt.callLater(control.updateMinimumHeight)
+                onMinimumHeightChanged: Qt.callLater(control.updateMinimumHeight)
 
                 activeItem: control.activeItem
                 single: control.rowData.children.length == 1
